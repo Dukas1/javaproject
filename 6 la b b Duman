@@ -1,0 +1,152 @@
+import java.util.Scanner;
+
+interface ShippingStrategy {
+    double calculateShippingCost(double weight, double distance);
+}
+
+class StandardShippingStrategy implements ShippingStrategy {
+    public double calculateShippingCost(double weight, double distance) {
+        return weight * 0.5 + distance * 0.1;
+    }
+}
+
+class ExpressShippingStrategy implements ShippingStrategy {
+    public double calculateShippingCost(double weight, double distance) {
+        return (weight * 0.75 + distance * 0.2) + 10;
+    }
+}
+
+class InternationalShippingStrategy implements ShippingStrategy {
+    public double calculateShippingCost(double weight, double distance) {
+        return weight * 1.0 + distance * 0.5 + 15;
+    }
+}
+
+class NightShippingStrategy implements ShippingStrategy {
+    public double calculateShippingCost(double weight, double distance) {
+        return weight * 0.5 + distance * 0.1 + 8;
+    }
+}
+
+class DeliveryContext {
+    private ShippingStrategy shippingStrategy;
+
+    public void setShippingStrategy(ShippingStrategy strategy) {
+        this.shippingStrategy = strategy;
+    }
+
+    public double calculateCost(double weight, double distance) {
+        if (shippingStrategy == null) {
+            throw new IllegalStateException("Стратегия не установлена");
+        }
+        if (weight < 0 || distance < 0) {
+            throw new IllegalArgumentException("Отрицательные значения недопустимы");
+        }
+        return shippingStrategy.calculateShippingCost(weight, distance);
+    }
+}
+
+public class Strategy {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        DeliveryContext context = new DeliveryContext();
+
+        System.out.println("Выберите тип доставки: 1 - Стандартная, 2 - Экспресс, 3 - Международная, 4 - Ночная");
+        String choice = sc.nextLine();
+
+        switch (choice) {
+            case "1" -> context.setShippingStrategy(new StandardShippingStrategy());
+            case "2" -> context.setShippingStrategy(new ExpressShippingStrategy());
+            case "3" -> context.setShippingStrategy(new InternationalShippingStrategy());
+            case "4" -> context.setShippingStrategy(new NightShippingStrategy());
+            default -> {
+                System.out.println("Неверный выбор");
+                return;
+            }
+        }
+
+        System.out.print("Введите вес (кг): ");
+        double weight = sc.nextDouble();
+        System.out.print("Введите расстояние (км): ");
+        double distance = sc.nextDouble();
+
+        double cost = context.calculateCost(weight, distance);
+        System.out.printf("Стоимость доставки: %.2f₸\n", cost);
+    }
+}
+
+import java.util.ArrayList;
+import java.util.List;
+
+interface Observer {
+    void update(float temperature);
+}
+
+interface Subject {
+    void registerObserver(Observer o);
+    void removeObserver(Observer o);
+    void notifyObservers();
+}
+
+class WeatherStation implements Subject {
+    private final List<Observer> observers = new ArrayList<>();
+    private float temperature;
+
+    public void registerObserver(Observer o) {
+        observers.add(o);
+    }
+
+    public void removeObserver(Observer o) {
+        observers.remove(o);
+    }
+
+    public void notifyObservers() {
+        for (Observer o : observers) {
+            o.update(temperature);
+        }
+    }
+
+    public void setTemperature(float newTemperature) {
+        System.out.println("Изменение температуры: " + newTemperature + "°C");
+        temperature = newTemperature;
+        notifyObservers();
+    }
+}
+
+class WeatherDisplay implements Observer {
+    private final String name;
+
+    public WeatherDisplay(String name) {
+        this.name = name;
+    }
+
+    public void update(float temperature) {
+        System.out.println(name + " показывает новую температуру: " + temperature + "°C");
+    }
+}
+
+class EmailAlert implements Observer {
+    public void update(float temperature) {
+        System.out.println("Email уведомление: температура изменилась на " + temperature + "°C");
+    }
+}
+
+public class ObserverPattern {
+    public static void main(String[] args) {
+        WeatherStation station = new WeatherStation();
+
+        WeatherDisplay mobileApp = new WeatherDisplay("Мобильное приложение");
+        WeatherDisplay board = new WeatherDisplay("Электронное табло");
+        EmailAlert email = new EmailAlert();
+
+        station.registerObserver(mobileApp);
+        station.registerObserver(board);
+        station.registerObserver(email);
+
+        station.setTemperature(25.5f);
+        station.setTemperature(30.0f);
+
+        station.removeObserver(board);
+        station.setTemperature(28.0f);
+    }
+}
