@@ -1,0 +1,157 @@
+import java.util.*;
+
+
+interface PaymentStrategy {
+    void pay(double amount);
+}
+
+class CreditCardPayment implements PaymentStrategy {
+    public void pay(double amount) {
+        System.out.println("Оплата " + amount + " тг банковской картой выполнена успешно.");
+    }
+}
+
+class PayPalPayment implements PaymentStrategy {
+    public void pay(double amount) {
+        System.out.println("Оплата " + amount + " тг через PayPal выполнена успешно.");
+    }
+}
+
+class CryptoPayment implements PaymentStrategy {
+    public void pay(double amount) {
+        System.out.println("Оплата " + amount + " тг с помощью криптовалюты выполнена успешно.");
+    }
+}
+
+class PaymentContext {
+    private PaymentStrategy strategy;
+
+    public void setPaymentStrategy(PaymentStrategy strategy) {
+        this.strategy = strategy;
+    }
+
+    public void executePayment(double amount) {
+        if (strategy == null) {
+            System.out.println("Ошибка: способ оплаты не выбран!");
+            return;
+        }
+        strategy.pay(amount);
+    }
+}
+
+
+interface Observer {
+    void update(String currency, double rate);
+}
+
+interface Subject {
+    void attach(Observer o);
+    void detach(Observer o);
+    void notifyObservers();
+}
+
+class CurrencyExchange implements Subject {
+    private List<Observer> observers = new ArrayList<>();
+    private String currency;
+    private double rate;
+
+    public void setRate(String currency, double rate) {
+        this.currency = currency;
+        this.rate = rate;
+        notifyObservers();
+    }
+
+    public void attach(Observer o) {
+        observers.add(o);
+    }
+
+    public void detach(Observer o) {
+        observers.remove(o);
+    }
+
+    public void notifyObservers() {
+        for (Observer o : observers) {
+            o.update(currency, rate);
+        }
+    }
+}
+
+class Bank implements Observer {
+    public void update(String currency, double rate) {
+        System.out.println("[Банк] Новый курс " + currency + ": " + rate);
+    }
+}
+
+class MobileApp implements Observer {
+    public void update(String currency, double rate) {
+        System.out.println("[Мобильное приложение] Курс " + currency + " изменился на " + rate);
+    }
+}
+
+class NewsPortal implements Observer {
+    public void update(String currency, double rate) {
+        System.out.println("[Новости] Обновление курса: " + currency + " теперь " + rate);
+    }
+}
+
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Выберите демонстрацию:");
+        System.out.println("1 - Паттерн Стратегия (способы оплаты)");
+        System.out.println("2 - Паттерн Наблюдатель (курсы валют)");
+        System.out.print("Ваш выбор: ");
+        int choice = scanner.nextInt();
+
+        if (choice == 1) runStrategyDemo(scanner);
+        else if (choice == 2) runObserverDemo();
+        else System.out.println("Неверный выбор.");
+    }
+
+    static void runStrategyDemo(Scanner scanner) {
+        PaymentContext context = new PaymentContext();
+
+        System.out.println("Выберите способ оплаты:");
+        System.out.println("1 - Банковская карта");
+        System.out.println("2 - PayPal");
+        System.out.println("3 - Криптовалюта");
+        System.out.print("Ваш выбор: ");
+        int method = scanner.nextInt();
+
+        switch (method) {
+            case 1 -> context.setPaymentStrategy(new CreditCardPayment());
+            case 2 -> context.setPaymentStrategy(new PayPalPayment());
+            case 3 -> context.setPaymentStrategy(new CryptoPayment());
+            default -> {
+                System.out.println("Неверный выбор.");
+                return;
+            }
+        }
+
+        System.out.print("Введите сумму оплаты: ");
+        double amount = scanner.nextDouble();
+        context.executePayment(amount);
+    }
+
+    static void runObserverDemo() {
+        CurrencyExchange exchange = new CurrencyExchange();
+
+        Bank bank = new Bank();
+        MobileApp app = new MobileApp();
+        NewsPortal news = new NewsPortal();
+
+        exchange.attach(bank);
+        exchange.attach(app);
+        exchange.attach(news);
+
+        exchange.setRate("USD", 476.50);
+        System.out.println();
+
+        exchange.setRate("EUR", 510.75);
+        System.out.println();
+
+        exchange.detach(app);
+        exchange.setRate("USD", 478.20);
+    }
+}
