@@ -1,0 +1,116 @@
+interface IReport {
+    String generate();
+}
+
+class SalesReport implements IReport {
+    public String generate() { return "Sales Report"; }
+}
+
+class UserReport implements IReport {
+    public String generate() { return "User Report"; }
+}
+
+abstract class ReportDecorator implements IReport {
+    protected IReport report;
+    ReportDecorator(IReport report) { this.report = report; }
+}
+
+class DateFilterDecorator extends ReportDecorator {
+    DateFilterDecorator(IReport report) { super(report); }
+    public String generate() { return report.generate() + " + Date Filter"; }
+}
+
+class SortingDecorator extends ReportDecorator {
+    SortingDecorator(IReport report) { super(report); }
+    public String generate() { return report.generate() + " + Sorting"; }
+}
+
+class CsvExportDecorator extends ReportDecorator {
+    CsvExportDecorator(IReport report) { super(report); }
+    public String generate() { return report.generate() + " + CSV Export"; }
+}
+
+class PdfExportDecorator extends ReportDecorator {
+    PdfExportDecorator(IReport report) { super(report); }
+    public String generate() { return report.generate() + " + PDF Export"; }
+}
+
+class ReportDemo {
+    public static void run() {
+        IReport report1 = new SalesReport();
+        report1 = new DateFilterDecorator(report1);
+        report1 = new SortingDecorator(report1);
+        report1 = new CsvExportDecorator(report1);
+        System.out.println(report1.generate());
+
+        IReport report2 = new UserReport();
+        report2 = new SortingDecorator(report2);
+        report2 = new PdfExportDecorator(report2);
+        System.out.println(report2.generate());
+    }
+}
+
+interface IInternalDeliveryService {
+    void deliverOrder(String orderId);
+    String getDeliveryStatus(String orderId);
+}
+
+class InternalDeliveryService implements IInternalDeliveryService {
+    public void deliverOrder(String orderId) { System.out.println("Internal delivering " + orderId); }
+    public String getDeliveryStatus(String orderId) { return "Internal delivered"; }
+}
+
+class ExternalLogisticsServiceA {
+    void shipItem(int itemId) { System.out.println("A shipping " + itemId); }
+    String trackShipment(int shipmentId) { return "A shipped"; }
+}
+
+class ExternalLogisticsServiceB {
+    void sendPackage(String info) { System.out.println("B sending " + info); }
+    String checkPackageStatus(String code) { return "B in transit"; }
+}
+
+class LogisticsAdapterA implements IInternalDeliveryService {
+    ExternalLogisticsServiceA a = new ExternalLogisticsServiceA();
+    public void deliverOrder(String orderId) { a.shipItem(orderId.hashCode()); }
+    public String getDeliveryStatus(String orderId) { return a.trackShipment(orderId.hashCode()); }
+}
+
+class LogisticsAdapterB implements IInternalDeliveryService {
+    ExternalLogisticsServiceB b = new ExternalLogisticsServiceB();
+    public void deliverOrder(String orderId) { b.sendPackage(orderId); }
+    public String getDeliveryStatus(String orderId) { return b.checkPackageStatus(orderId); }
+}
+
+class DeliveryServiceFactory {
+    static IInternalDeliveryService getService(String type) {
+        if (type.equalsIgnoreCase("A")) return new LogisticsAdapterA();
+        if (type.equalsIgnoreCase("B")) return new LogisticsAdapterB();
+        return new InternalDeliveryService();
+    }
+}
+
+class LogisticsDemo {
+    public static void run() {
+        IInternalDeliveryService s1 = DeliveryServiceFactory.getService("internal");
+        s1.deliverOrder("001");
+        System.out.println(s1.getDeliveryStatus("001"));
+
+        IInternalDeliveryService s2 = DeliveryServiceFactory.getService("A");
+        s2.deliverOrder("002");
+        System.out.println(s2.getDeliveryStatus("002"));
+
+        IInternalDeliveryService s3 = DeliveryServiceFactory.getService("B");
+        s3.deliverOrder("003");
+        System.out.println(s3.getDeliveryStatus("003"));
+    }
+}
+
+public class Module08Practice {
+    public static void main(String[] args) {
+        System.out.println("=== Decorator Demo ===");
+        ReportDemo.run();
+        System.out.println("\n=== Adapter Demo ===");
+        LogisticsDemo.run();
+    }
+}
