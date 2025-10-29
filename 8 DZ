@@ -1,0 +1,80 @@
+public class Cafe {
+    public static void main(String[] args) {
+        Beverage drink1 = new Espresso();
+        drink1 = new Milk(drink1);
+        drink1 = new Sugar(drink1);
+        System.out.println(drink1.getDescription() + " = " + drink1.cost() + "₸");
+
+        Beverage drink2 = new Mocha();
+        drink2 = new Syrup(drink2, "Vanilla");
+        System.out.println(drink2.getDescription() + " = " + drink2.cost() + "₸");
+
+        IPaymentProcessor paypal = new PayPalPaymentProcessor();
+        IPaymentProcessor stripe = new StripeAdapter(new StripeService());
+        paypal.processPayment(1500);
+        stripe.processPayment(2500);
+    }
+
+    interface Beverage {
+        String getDescription();
+        double cost();
+    }
+
+    static class Espresso implements Beverage {
+        public String getDescription() { return "Espresso"; }
+        public double cost() { return 500; }
+    }
+
+    static class Mocha implements Beverage {
+        public String getDescription() { return "Mocha"; }
+        public double cost() { return 700; }
+    }
+
+    static abstract class Addon implements Beverage {
+        protected Beverage beverage;
+        Addon(Beverage beverage) { this.beverage = beverage; }
+    }
+
+    static class Milk extends Addon {
+        Milk(Beverage beverage) { super(beverage); }
+        public String getDescription() { return beverage.getDescription() + ", Milk"; }
+        public double cost() { return beverage.cost() + 80; }
+    }
+
+    static class Sugar extends Addon {
+        Sugar(Beverage beverage) { super(beverage); }
+        public String getDescription() { return beverage.getDescription() + ", Sugar"; }
+        public double cost() { return beverage.cost() + 20; }
+    }
+
+    static class Syrup extends Addon {
+        String flavor;
+        Syrup(Beverage beverage, String flavor) { super(beverage); this.flavor = flavor; }
+        public String getDescription() { return beverage.getDescription() + ", Syrup(" + flavor + ")"; }
+        public double cost() { return beverage.cost() + 90; }
+    }
+
+    interface IPaymentProcessor {
+        void processPayment(double amount);
+    }
+
+    static class PayPalPaymentProcessor implements IPaymentProcessor {
+        public void processPayment(double amount) {
+            System.out.println("PayPal: " + amount + "₸ оплачено");
+        }
+    }
+
+    static class StripeService {
+        void pay(double sum) {
+            System.out.println("Stripe: " + sum + "₸ оплачено");
+        }
+    }
+
+    static class StripeAdapter implements IPaymentProcessor {
+        StripeService stripe;
+        StripeAdapter(StripeService stripe) { this.stripe = stripe; }
+        public void processPayment(double amount) {
+            stripe.pay(amount);
+        }
+    }
+}
