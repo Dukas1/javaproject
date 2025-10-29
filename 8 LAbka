@@ -1,0 +1,112 @@
+public class Main {
+    public static void main(String[] args) {
+        IBeverage drink = new Coffee();
+        System.out.println(drink.getDescription() + " : " + drink.getCost());
+        drink = new MilkDecorator(drink);
+        System.out.println(drink.getDescription() + " : " + drink.getCost());
+        drink = new SugarDecorator(drink);
+        System.out.println(drink.getDescription() + " : " + drink.getCost());
+        drink = new ChocolateDecorator(drink);
+        System.out.println(drink.getDescription() + " : " + drink.getCost());
+        drink = new VanillaDecorator(drink);
+        System.out.println(drink.getDescription() + " : " + drink.getCost());
+
+        System.out.println("\n--- Payments ---");
+        IPaymentProcessor p1 = new InternalPaymentProcessor();
+        p1.processPayment(100);
+        p1.refundPayment(50);
+        IPaymentProcessor p2 = new PaymentAdapterA(new ExternalPaymentSystemA());
+        p2.processPayment(200);
+        p2.refundPayment(100);
+        IPaymentProcessor p3 = new PaymentAdapterB(new ExternalPaymentSystemB());
+        p3.processPayment(300);
+        p3.refundPayment(150);
+    }
+}
+
+interface IBeverage {
+    double getCost();
+    String getDescription();
+}
+
+class Coffee implements IBeverage {
+    public double getCost() { return 50; }
+    public String getDescription() { return "Coffee"; }
+}
+
+abstract class BeverageDecorator implements IBeverage {
+    protected IBeverage beverage;
+    public BeverageDecorator(IBeverage beverage) { this.beverage = beverage; }
+    public double getCost() { return beverage.getCost(); }
+    public String getDescription() { return beverage.getDescription(); }
+}
+
+class MilkDecorator extends BeverageDecorator {
+    public MilkDecorator(IBeverage beverage) { super(beverage); }
+    public double getCost() { return super.getCost() + 10; }
+    public String getDescription() { return super.getDescription() + ", Milk"; }
+}
+
+class SugarDecorator extends BeverageDecorator {
+    public SugarDecorator(IBeverage beverage) { super(beverage); }
+    public double getCost() { return super.getCost() + 5; }
+    public String getDescription() { return super.getDescription() + ", Sugar"; }
+}
+
+class ChocolateDecorator extends BeverageDecorator {
+    public ChocolateDecorator(IBeverage beverage) { super(beverage); }
+    public double getCost() { return super.getCost() + 15; }
+    public String getDescription() { return super.getDescription() + ", Chocolate"; }
+}
+
+class VanillaDecorator extends BeverageDecorator {
+    public VanillaDecorator(IBeverage beverage) { super(beverage); }
+    public double getCost() { return super.getCost() + 8; }
+    public String getDescription() { return super.getDescription() + ", Vanilla"; }
+}
+
+interface IPaymentProcessor {
+    void processPayment(double amount);
+    void refundPayment(double amount);
+}
+
+class InternalPaymentProcessor implements IPaymentProcessor {
+    public void processPayment(double amount) {
+        System.out.println("Processing payment " + amount + " via Internal System");
+    }
+    public void refundPayment(double amount) {
+        System.out.println("Refunding " + amount + " via Internal System");
+    }
+}
+
+class ExternalPaymentSystemA {
+    public void makePayment(double amount) {
+        System.out.println("Making payment " + amount + " via System A");
+    }
+    public void makeRefund(double amount) {
+        System.out.println("Refunding " + amount + " via System A");
+    }
+}
+
+class ExternalPaymentSystemB {
+    public void sendPayment(double amount) {
+        System.out.println("Sending payment " + amount + " via System B");
+    }
+    public void processRefund(double amount) {
+        System.out.println("Processing refund " + amount + " via System B");
+    }
+}
+
+class PaymentAdapterA implements IPaymentProcessor {
+    private ExternalPaymentSystemA sys;
+    public PaymentAdapterA(ExternalPaymentSystemA sys) { this.sys = sys; }
+    public void processPayment(double amount) { sys.makePayment(amount); }
+    public void refundPayment(double amount) { sys.makeRefund(amount); }
+}
+
+class PaymentAdapterB implements IPaymentProcessor {
+    private ExternalPaymentSystemB sys;
+    public PaymentAdapterB(ExternalPaymentSystemB sys) { this.sys = sys; }
+    public void processPayment(double amount) { sys.sendPayment(amount); }
+    public void refundPayment(double amount) { sys.processRefund(amount); }
+}
