@@ -1,0 +1,293 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+
+class TV {
+    public void turnOn() {
+        System.out.println("TV: Телевизор включен.");
+    }
+    public void turnOff() {
+        System.out.println("TV: Телевизор выключен.");
+    }
+    public void selectChannel(int channel) {
+        System.out.println("TV: Выбран канал " + channel + ".");
+    }
+    public void setInput(String input) {
+        System.out.println("TV: Установлен вход: " + input + ".");
+    }
+}
+
+class AudioSystem {
+    public void turnOn() {
+        System.out.println("AudioSystem: Аудиосистема включена.");
+    }
+    public void turnOff() {
+        System.out.println("AudioSystem: Аудиосистема выключена.");
+    }
+    public void setVolume(int level) {
+        System.out.println("AudioSystem: Громкость установлена на " + level + ".");
+    }
+}
+
+class DVDPlayer {
+    public void turnOn() {
+        System.out.println("DVDPlayer: DVD-проигрыватель включен.");
+    }
+    public void play(String movie) {
+        System.out.println("DVDPlayer: Воспроизведение фильма: '" + movie + "'.");
+    }
+    public void pause() {
+        System.out.println("DVDPlayer: Пауза.");
+    }
+    public void stop() {
+        System.out.println("DVDPlayer: Остановка воспроизведения.");
+    }
+    public void turnOff() {
+        System.out.println("DVDPlayer: DVD-проигрыватель выключен.");
+    }
+}
+
+class GameConsole {
+    public void turnOn() {
+        System.out.println("GameConsole: Игровая консоль включена.");
+    }
+    public void launchGame(String game) {
+        System.out.println("GameConsole: Запуск игры: '" + game + "'.");
+    }
+    public void turnOff() {
+        System.out.println("GameConsole: Игровая консоль выключена.");
+    }
+}
+
+class HomeTheaterFacade {
+    private final TV tv;
+    private final AudioSystem audioSystem;
+    private final DVDPlayer dvdPlayer;
+    private final GameConsole gameConsole;
+
+    public HomeTheaterFacade(TV tv, AudioSystem audioSystem, DVDPlayer dvdPlayer, GameConsole gameConsole) {
+        this.tv = tv;
+        this.audioSystem = audioSystem;
+        this.dvdPlayer = dvdPlayer;
+        this.gameConsole = gameConsole;
+    }
+
+    public void watchMovie(String movie) {
+        System.out.println("\n--- Сценарий: Начать просмотр фильма ---");
+        tv.turnOn();
+        tv.selectChannel(0);
+        tv.setInput("HDMI DVD");
+        audioSystem.turnOn();
+        audioSystem.setVolume(10);
+        dvdPlayer.turnOn();
+        dvdPlayer.play(movie);
+        System.out.println("Фильм запущен.");
+    }
+    
+    public void listenToMusic() {
+        System.out.println("\n--- Сценарий: Прослушивание музыки ---");
+        tv.turnOn();
+        tv.setInput("Audio Input");
+        audioSystem.turnOn();
+        audioSystem.setVolume(15);
+        System.out.println("Система готова к прослушиванию музыки.");
+    }
+
+    public void playGame(String game) {
+        System.out.println("\n--- Сценарий: Запуск видеоигры ---");
+        tv.turnOn();
+        tv.setInput("HDMI Game");
+        audioSystem.turnOn();
+        audioSystem.setVolume(8);
+        gameConsole.turnOn();
+        gameConsole.launchGame(game);
+        System.out.println("Игра запущена.");
+    }
+    
+    public void setMasterVolume(int level) {
+        System.out.println("\n--- Регулировка громкости через фасад ---");
+        audioSystem.setVolume(level);
+    }
+
+    public void shutdown() {
+        System.out.println("\n--- Сценарий: Выключение всей системы ---");
+        dvdPlayer.stop();
+        dvdPlayer.turnOff();
+        gameConsole.turnOff();
+        audioSystem.turnOff();
+        tv.turnOff();
+        System.out.println("Система выключена.");
+    }
+}
+
+
+abstract class FileSystemComponent {
+    protected String name;
+
+    public FileSystemComponent(String name) {
+        this.name = name;
+    }
+
+    public abstract void display(int depth);
+    public abstract long getSize();
+
+    public void add(FileSystemComponent component) {
+        throw new UnsupportedOperationException("Нельзя добавить компонент к файлу.");
+    }
+    public void remove(FileSystemComponent component) {
+        throw new UnsupportedOperationException("Нельзя удалить компонент у файла.");
+    }
+
+    protected String getIndent(int depth) {
+        return " ".repeat(depth * 2);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FileSystemComponent that = (FileSystemComponent) o;
+        return Objects.equals(name, that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
+}
+
+class File extends FileSystemComponent {
+    private final long size;
+
+    public File(String name, long size) {
+        super(name);
+        this.size = size;
+    }
+
+    @Override
+    public long getSize() {
+        return size;
+    }
+
+    @Override
+    public void display(int depth) {
+        System.out.println(getIndent(depth) + "📄 Файл: " + name + " (" + size + " KB)");
+    }
+}
+
+class Directory extends FileSystemComponent {
+    private final List<FileSystemComponent> children = new ArrayList<>();
+
+    public Directory(String name) {
+        super(name);
+    }
+
+    @Override
+    public void add(FileSystemComponent component) {
+        if (children.stream().noneMatch(c -> c.name.equals(component.name))) {
+            children.add(component);
+        } else {
+            System.out.println("ОШИБКА: Компонент " + component.name + " уже существует в папке " + name + ". Добавление отменено.");
+        }
+    }
+
+    @Override
+    public void remove(FileSystemComponent component) {
+        if (children.removeIf(c -> c.name.equals(component.name))) {
+        } else {
+            System.out.println("ОШИБКА: Компонент " + component.name + " не найден в папке " + name + ". Удаление отменено.");
+        }
+    }
+
+    @Override
+    public long getSize() {
+        long totalSize = 0;
+        for (FileSystemComponent component : children) {
+            totalSize += component.getSize();
+        }
+        return totalSize;
+    }
+
+    @Override
+    public void display(int depth) {
+        System.out.println(getIndent(depth) + "📁 Папка: " + name + " (Размер: " + getSize() + " KB)");
+        for (FileSystemComponent component : children) {
+            component.display(depth + 1);
+        }
+    }
+}
+
+ъ
+public class Solution {
+    public static void main(String[] args) {
+        
+      
+        System.out.println("=================================================");
+        System.out.println("           ДОМАШНЕЕ ЗАДАНИЕ: ЧАСТЬ 1 (ФАСАД)");
+        System.out.println("=================================================");
+        
+        TV tv = new TV();
+        AudioSystem audioSystem = new AudioSystem();
+        DVDPlayer dvdPlayer = new DVDPlayer();
+        GameConsole gameConsole = new GameConsole();
+
+        HomeTheaterFacade facade = new HomeTheaterFacade(tv, audioSystem, dvdPlayer, gameConsole);
+
+        
+        facade.watchMovie("Терминатор 2");
+        facade.playGame("Cyberpunk 2077");
+        facade.listenToMusic();
+
+
+        facade.setMasterVolume(12);
+
+
+        facade.shutdown();
+
+     
+        System.out.println("\n=================================================");
+        System.out.println("        ДОМАШНЕЕ ЗАДАНИЕ: ЧАСТЬ 2 (КОМПОНОВЩИК)");
+        System.out.println("=================================================");
+
+        // Создание компонентов
+        Directory root = new Directory("C:\\");
+        File systemFile = new File("boot.ini", 10);
+        
+        Directory programFiles = new Directory("Program Files");
+        File chromeExe = new File("chrome.exe", 256);
+        
+        Directory documents = new Directory("Documents");
+        File report = new File("Отчет.docx", 1024);
+        File image = new File("Фото.jpg", 3072);
+        
+        Directory temp = new Directory("Temp");
+
+     
+        root.add(systemFile);
+        root.add(programFiles);
+        root.add(documents);
+        root.add(temp);
+
+        programFiles.add(chromeExe);
+        documents.add(report);
+        documents.add(image);
+        
+       
+        documents.add(new File("Отчет.docx", 500));
+
+        System.out.println("\n--- Структура файловой системы и размеры ---");
+        root.display(0);
+        
+        System.out.println("\nОбщий размер диска C:\\: " + root.getSize() + " KB");
+        System.out.println("Размер папки Documents: " + documents.getSize() + " KB");
+
+       
+        System.out.println("\n--- Удаление компонента ---");
+        documents.remove(new File("Фото.jpg", 0)); 
+        documents.remove(new File("Несуществующий.txt", 0)); 
+
+        System.out.println("\n--- Структура после удаления ---");
+        root.display(0);
+    }
+}
