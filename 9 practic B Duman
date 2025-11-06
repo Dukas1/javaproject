@@ -1,0 +1,342 @@
+import java.util.ArrayList;
+import java.util.List;
+
+
+
+class RoomBookingSystem {
+    public void bookRoom(String roomType, String guestName) {
+        System.out.println("RoomBookingSystem: Бронирование номера типа '" + roomType + "' на имя: " + guestName);
+    }
+
+    public boolean checkAvailability(String roomType) {
+        System.out.println("RoomBookingSystem: Проверка доступности номера типа '" + roomType + "'.");
+        return true; 
+    }
+
+    public void cancelRoomBooking(String guestName) {
+        System.out.println("RoomBookingSystem: Отмена бронирования для " + guestName);
+    }
+}
+
+
+class RestaurantSystem {
+    public void bookTable(String guestName, int numberOfPeople) {
+        System.out.println("RestaurantSystem: Бронирование столика на " + numberOfPeople + " чел. для " + guestName);
+    }
+
+    public void orderFood(String guestName, String dishes) {
+        System.out.println("RestaurantSystem: Заказ еды для " + guestName + ". Блюда: " + dishes);
+    }
+
+    public void callTaxi(String guestName) {
+        System.out.println("RestaurantSystem: Автоматический вызов такси для " + guestName + ".");
+    }
+
+    public void cancelTableBooking(String guestName) {
+        System.out.println("RestaurantSystem: Отмена бронирования столика для " + guestName);
+    }
+}
+
+
+class EventManagementSystem {
+    public void bookConferenceHall(String eventName) {
+        System.out.println("EventManagementSystem: Бронирование конференц-зала для мероприятия: " + eventName);
+    }
+
+    public void orderEquipment(String eventName, String equipment) {
+        System.out.println("EventManagementSystem: Заказ оборудования ('" + equipment + "') для мероприятия: " + eventName);
+    }
+
+    public void cancelEventBooking(String eventName) {
+        System.out.println("EventManagementSystem: Отмена мероприятия: " + eventName);
+    }
+}
+
+
+class CleaningService {
+    public void scheduleCleaning(String roomNumber, String time) {
+        System.out.println("CleaningService: Планирование уборки номера " + roomNumber + " на " + time);
+    }
+
+    public void performCleaning(String roomNumber) {
+        System.out.println("CleaningService: Выполнение уборки номера " + roomNumber + " по запросу.");
+    }
+}
+
+
+class HotelFacade {
+    private final RoomBookingSystem roomBookingSystem;
+    private final RestaurantSystem restaurantSystem;
+    private final EventManagementSystem eventManagementSystem;
+    private final CleaningService cleaningService;
+
+    public HotelFacade() {
+        this.roomBookingSystem = new RoomBookingSystem();
+        this.restaurantSystem = new RestaurantSystem();
+        this.eventManagementSystem = new EventManagementSystem();
+        this.cleaningService = new CleaningService();
+    }
+
+    public void bookStayWithServices(String guestName, String roomType, String foodOrder, String cleaningTime) {
+        System.out.println("\n=== СЦЕНАРИЙ 1: Бронирование проживания с доп. услугами ===");
+        if (roomBookingSystem.checkAvailability(roomType)) {
+            roomBookingSystem.bookRoom(roomType, guestName);
+            restaurantSystem.orderFood(guestName, foodOrder);
+            cleaningService.scheduleCleaning(roomType, cleaningTime);
+            System.out.println("Готово: Проживание и услуги забронированы для " + guestName + ".");
+        } else {
+            System.out.println("Ошибка: Номер " + roomType + " недоступен.");
+        }
+    }
+
+    public void organizeEvent(String eventName, String hallType, String equipment, int numberOfRooms, String roomType, String groupName) {
+        System.out.println("\n=== СЦЕНАРИЙ 2: Организация мероприятия ===");
+        
+        eventManagementSystem.bookConferenceHall(eventName);
+        eventManagementSystem.orderEquipment(eventName, equipment);
+
+        for (int i = 1; i <= numberOfRooms; i++) {
+            roomBookingSystem.bookRoom(roomType, "Участник " + i + " из " + groupName);
+        }
+        
+        System.out.println("Готово: Мероприятие '" + eventName + "' организовано. Забронировано " + numberOfRooms + " номеров.");
+    }
+
+    public void bookDinnerWithTaxi(String guestName, int numberOfPeople) {
+        System.out.println("\n=== СЦЕНАРИЙ 3: Бронирование ужина с такси ===");
+        restaurantSystem.bookTable(guestName, numberOfPeople);
+        restaurantSystem.callTaxi(guestName);
+        System.out.println("Готово: Ужин забронирован и такси вызвано для " + guestName + ".");
+    }
+
+    public void cancelAllBookings(String guestName, String eventName) {
+        System.out.println("\n=== ДОП. ЗАДАНИЕ: Отмена всех бронирований ===");
+        roomBookingSystem.cancelRoomBooking(guestName);
+        restaurantSystem.cancelTableBooking(guestName);
+        eventManagementSystem.cancelEventBooking(eventName);
+        System.out.println("Все бронирования, связанные с " + guestName + " и " + eventName + ", отменены.");
+    }
+
+    public void requestCleaning(String roomNumber) {
+        System.out.println("\n=== ДОП. ЗАДАНИЕ: Уборка по запросу ===");
+        cleaningService.performCleaning(roomNumber);
+        System.out.println("Готово: Уборка номера " + roomNumber + " выполнена.");
+    }
+}
+
+
+
+
+
+abstract class OrganizationComponent {
+    protected String name;
+
+    public OrganizationComponent(String name) {
+        this.name = name;
+    }
+
+    public abstract double getBudget();
+    public abstract int getStaffCount();
+    public abstract void displayStructure(String prefix);
+    public abstract OrganizationComponent searchEmployee(String employeeName);
+    public abstract void displayDepartmentEmployees();
+    
+    public void add(OrganizationComponent component) {
+        throw new UnsupportedOperationException("Нельзя добавить компонент к отдельному сотруднику.");
+    }
+    public void remove(OrganizationComponent component) {
+        throw new UnsupportedOperationException("Нельзя удалить компонент у отдельного сотрудника.");
+    }
+}
+
+
+class Employee extends OrganizationComponent {
+    private String title;
+    private double salary;
+    private boolean isContractor;
+
+    public Employee(String name, String title, double salary, boolean isContractor) {
+        super(name);
+        this.title = title;
+        this.salary = salary;
+        this.isContractor = isContractor;
+    }
+
+    @Override
+    public double getBudget() {
+        return isContractor ? 0 : salary; 
+    }
+
+    @Override
+    public int getStaffCount() {
+        return 1;
+    }
+
+    @Override
+    public void displayStructure(String prefix) {
+        String type = isContractor ? " (Контрактор)" : "";
+        System.out.println(prefix + "Сотрудник: " + name + " (" + title + ")" + type + ", ЗП: " + salary);
+    }
+    
+    @Override
+    public OrganizationComponent searchEmployee(String employeeName) {
+        if (this.name.equalsIgnoreCase(employeeName)) {
+            return this;
+        }
+        return null;
+    }
+    
+    @Override
+    public void displayDepartmentEmployees() {
+        System.out.println(" - " + name + " (" + title + ")");
+    }
+
+    public void setSalary(double newSalary) {
+        this.salary = newSalary;
+        System.out.println("   [INFO] Зарплата сотрудника " + name + " изменена на " + newSalary);
+    }
+    
+    public double getSalary() {
+        return salary;
+    }
+}
+
+
+class Department extends OrganizationComponent {
+    private final List<OrganizationComponent> children = new ArrayList<>();
+
+    public Department(String name) {
+        super(name);
+    }
+
+    @Override
+    public void add(OrganizationComponent component) {
+        children.add(component);
+    }
+
+    @Override
+    public void remove(OrganizationComponent component) {
+        children.remove(component);
+    }
+
+    @Override
+    public double getBudget() {
+        double totalBudget = 0;
+        for (OrganizationComponent component : children) {
+            totalBudget += component.getBudget();
+        }
+        return totalBudget;
+    }
+
+    @Override
+    public int getStaffCount() {
+        int totalStaff = 0;
+        for (OrganizationComponent component : children) {
+            totalStaff += component.getStaffCount();
+        }
+        return totalStaff;
+    }
+
+    @Override
+    public void displayStructure(String prefix) {
+        System.out.println(prefix + "Отдел: " + name + " (Штат: " + getStaffCount() + ", Бюджет: " + getBudget() + ")");
+        for (OrganizationComponent component : children) {
+            component.displayStructure(prefix + "   ");
+        }
+    }
+    
+    @Override
+    public OrganizationComponent searchEmployee(String employeeName) {
+        for (OrganizationComponent component : children) {
+            OrganizationComponent found = component.searchEmployee(employeeName);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+    
+    @Override
+    public void displayDepartmentEmployees() {
+        for (OrganizationComponent component : children) {
+            component.displayDepartmentEmployees();
+        }
+    }
+}
+
+
+
+
+public class Solution {
+    public static void main(String[] args) {
+        
+        System.out.println("=================================================");
+        System.out.println("           ЧАСТЬ 1: ФАСАД (ГОСТИНИЦА)");
+        System.out.println("=================================================");
+
+       
+        HotelFacade hotelFacade = new HotelFacade();
+
+        hotelFacade.bookStayWithServices("Иванов И.И.", "Люкс", "Ужин из трех блюд", "14:00");
+        hotelFacade.organizeEvent("IT-Конференция", "Большой зал", "Проектор и микрофоны", 10, "Стандарт", "IT-Отдел");
+        hotelFacade.bookDinnerWithTaxi("Петров П.П.", 4);
+        hotelFacade.requestCleaning("Люкс 101");
+        hotelFacade.cancelAllBookings("Иванов И.И.", "IT-Конференция");
+
+
+        System.out.println("\n=================================================");
+        System.out.println("        ЧАСТЬ 2: КОМПОНОВЩИК (КОРПОРАЦИЯ)");
+        System.out.println("=================================================");
+        
+        // Клиентский код для Компоновщика
+        Employee ceo = new Employee("Анна Смирнова", "Генеральный директор", 300000, false);
+        Employee leadDev = new Employee("Максим Власов", "Ведущий разработчик", 150000, false);
+        Employee juniorDev = new Employee("Елена Ковалева", "Младший разработчик", 70000, false);
+        Employee qa = new Employee("Дмитрий Лебедев", "Тестировщик", 80000, false);
+        Employee hrManager = new Employee("Светлана Волкова", "Менеджер по персоналу", 90000, false);
+        Employee contractDesigner = new Employee("Игорь Зайцев", "Дизайнер", 50000, true);
+
+        Department techDepartment = new Department("Технический отдел");
+        Department hrDepartment = new Department("Отдел кадров");
+        Department mainOffice = new Department("Главный офис");
+        Department designSubUnit = new Department("Дизайн-подразделение");
+
+        designSubUnit.add(contractDesigner);
+        techDepartment.add(leadDev);
+        techDepartment.add(juniorDev);
+        techDepartment.add(qa);
+        techDepartment.add(designSubUnit);
+
+        hrDepartment.add(hrManager);
+
+        mainOffice.add(ceo);
+        mainOffice.add(techDepartment);
+        mainOffice.add(hrDepartment);
+
+        System.out.println("--- Структура организации ---");
+        mainOffice.displayStructure("");
+
+        System.out.println("\n--- Общий штат и бюджет ---");
+        System.out.println("Общий штат компании: " + mainOffice.getStaffCount());
+        System.out.println("Общий бюджет компании (без контракторов): " + mainOffice.getBudget());
+
+        System.out.println("\n--- Доп. задание: Изменение зарплаты и пересчет ---");
+        Employee employeeToModify = (Employee) mainOffice.searchEmployee("Елена Ковалева");
+        if (employeeToModify != null) {
+            employeeToModify.setSalary(95000);
+        }
+        System.out.println("Новый бюджет Технического отдела: " + techDepartment.getBudget());
+
+        System.out.println("\n--- Доп. задание: Поиск сотрудника ---");
+        OrganizationComponent foundEmployee = mainOffice.searchEmployee("Дмитрий Лебедев");
+        if (foundEmployee != null) {
+            System.out.println("Сотрудник найден: " + ((Employee) foundEmployee).name + " (" + ((Employee) foundEmployee).getSalary() + ")");
+        } else {
+            System.out.println("Сотрудник не найден.");
+        }
+
+        System.out.println("\n--- Доп. задание: Отображение всех сотрудников отдела ---");
+        System.out.println("Сотрудники Технического отдела и его подотделов:");
+        techDepartment.displayDepartmentEmployees();
+    }
+}
