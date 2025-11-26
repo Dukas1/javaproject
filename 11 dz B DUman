@@ -1,0 +1,298 @@
+import java.util.ArrayList;
+import java.util.List;
+
+public class ECommerceSystem {
+    public static void main(String[] args) {
+        Category electronics = new Category(1, "Electronics");
+        Product phone = new Product(1, "Smartphone", "Model X", 499.99, 10, electronics);
+        Product headphones = new Product(2, "Headphones", "Noise cancelling", 79.99, 25, electronics);
+        Customer customer = new Customer(1, "Duman", "duman@example.com", "Almaty", "+77001234567");
+        Admin admin = new Admin(100, "Admin", "admin@shop.local", "HQ", "+77007654321");
+        Order order = new Order(1000, customer);
+        order.addProduct(phone);
+        order.addProduct(headphones);
+        PromoCode promo = new PromoCode("WELCOME10", 10);
+        order.applyPromo(promo);
+        Payment payment = new Payment(new CardPayment("4111111111111111"), order.getTotalPrice());
+        order.setPayment(payment);
+        order.pay();
+        Delivery delivery = new Delivery(500, customer.getAddress(), "Courier A");
+        order.setDelivery(delivery);
+        delivery.send();
+        delivery.complete();
+        customer.addPoints((int)order.getTotalPrice());
+        admin.logAction("Order " + order.getId() + " processed");
+        System.out.println("Order ID: " + order.getId());
+        System.out.println("Status: " + order.getStatus());
+        System.out.println("Total: " + order.getTotalPrice());
+        System.out.println("Payment status: " + payment.getStatus());
+        System.out.println("Delivery status: " + delivery.getStatus());
+        System.out.println("Customer points: " + customer.getLoyaltyPoints());
+    }
+}
+
+abstract class User {
+    protected int id;
+    protected String name;
+    protected String email;
+    protected String address;
+    protected String phone;
+
+    public User(int id, String name, String email, String address, String phone) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.address = address;
+        this.phone = phone;
+    }
+
+    public abstract void updateData(String name, String email, String address, String phone);
+
+    public int getId() { return id; }
+    public String getName() { return name; }
+    public String getEmail() { return email; }
+    public String getAddress() { return address; }
+    public String getPhone() { return phone; }
+}
+
+class Customer extends User {
+    private int loyaltyPoints;
+    private List<Order> orderHistory = new ArrayList<>();
+
+    public Customer(int id, String name, String email, String address, String phone) {
+        super(id, name, email, address, phone);
+        this.loyaltyPoints = 0;
+    }
+
+    @Override
+    public void updateData(String name, String email, String address, String phone) {
+        this.name = name;
+        this.email = email;
+        this.address = address;
+        this.phone = phone;
+    }
+
+    public void addPoints(int points) { this.loyaltyPoints += points; }
+    public int getLoyaltyPoints() { return loyaltyPoints; }
+    public void addOrderToHistory(Order order) { orderHistory.add(order); }
+    public List<Order> getOrderHistory() { return orderHistory; }
+}
+
+class Admin extends User {
+    public Admin(int id, String name, String email, String address, String phone) {
+        super(id, name, email, address, phone);
+    }
+
+    @Override
+    public void updateData(String name, String email, String address, String phone) {
+        this.name = name;
+        this.email = email;
+        this.address = address;
+        this.phone = phone;
+    }
+
+    public void logAction(String action) {
+        System.out.println("ADMIN LOG: " + action);
+    }
+}
+
+class Category {
+    private int id;
+    private String name;
+    public Category(int id, String name) { this.id = id; this.name = name; }
+    public int getId() { return id; }
+    public String getName() { return name; }
+}
+
+class Product {
+    private int id;
+    private String name;
+    private String description;
+    private double price;
+    private int stock;
+    private Category category;
+
+    public Product(int id, String name, String description, double price, int stock, Category category) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.stock = stock;
+        this.category = category;
+    }
+
+    public int getId() { return id; }
+    public String getName() { return name; }
+    public String getDescription() { return description; }
+    public double getPrice() { return price; }
+    public int getStock() { return stock; }
+    public Category getCategory() { return category; }
+
+    public boolean reserve(int qty) {
+        if (qty <= stock) {
+            stock -= qty;
+            return true;
+        }
+        return false;
+    }
+
+    public void restock(int qty) { stock += qty; }
+}
+
+class Order {
+    private int id;
+    private String status;
+    private Customer customer;
+    private List<OrderItem> items = new ArrayList<>();
+    private double totalPrice;
+    private Delivery delivery;
+    private Payment payment;
+    private PromoCode appliedPromo;
+
+    public Order(int id, Customer customer) {
+        this.id = id;
+        this.customer = customer;
+        this.status = "CREATED";
+        this.totalPrice = 0.0;
+    }
+
+    public int getId() { return id; }
+    public String getStatus() { return status; }
+    public Customer getCustomer() { return customer; }
+    public double getTotalPrice() { return totalPrice; }
+    public Delivery getDelivery() { return delivery; }
+    public Payment getPayment() { return payment; }
+
+    public void addProduct(Product product) {
+        if (product.reserve(1)) {
+            items.add(new OrderItem(product, 1));
+            totalPrice += product.getPrice();
+        } else {
+            throw new RuntimeException("Product out of stock: " + product.getName());
+        }
+    }
+
+    public void applyPromo(PromoCode promo) {
+        if (promo != null && promo.isValid()) {
+            appliedPromo = promo;
+            totalPrice = totalPrice * (100 - promo.getPercent()) / 100.0;
+        }
+    }
+
+    public void setDelivery(Delivery delivery) { this.delivery = delivery; }
+    public void setPayment(Payment payment) { this.payment = payment; }
+
+    public void pay() {
+        if (payment == null) throw new RuntimeException("Payment not set");
+        payment.process();
+        if ("DONE".equals(payment.getStatus())) {
+            status = "PAID";
+            customer.addOrderToHistory(this);
+        } else {
+            status = "PAYMENT_FAILED";
+        }
+    }
+
+    public void cancel() {
+        status = "CANCELLED";
+        for (OrderItem item : items) {
+            item.getProduct().restock(item.getQuantity());
+        }
+    }
+}
+
+class OrderItem {
+    private Product product;
+    private int quantity;
+    public OrderItem(Product product, int quantity) {
+        this.product = product;
+        this.quantity = quantity;
+    }
+    public Product getProduct() { return product; }
+    public int getQuantity() { return quantity; }
+}
+
+interface PaymentStrategy {
+    boolean pay(double amount);
+}
+
+class Payment {
+    private static int counter = 1;
+    private int id;
+    private String type;
+    private double amount;
+    private String status;
+    private PaymentStrategy strategy;
+
+    public Payment(PaymentStrategy strategy, double amount) {
+        this.id = counter++;
+        this.strategy = strategy;
+        this.amount = amount;
+        this.status = "CREATED";
+        this.type = strategy.getClass().getSimpleName();
+    }
+
+    public void process() {
+        boolean ok = strategy.pay(amount);
+        status = ok ? "DONE" : "FAILED";
+    }
+
+    public void refund() {
+        status = "REFUNDED";
+    }
+
+    public int getId() { return id; }
+    public String getType() { return type; }
+    public double getAmount() { return amount; }
+    public String getStatus() { return status; }
+}
+
+class CardPayment implements PaymentStrategy {
+    private String cardNumber;
+    public CardPayment(String cardNumber) { this.cardNumber = cardNumber; }
+    @Override
+    public boolean pay(double amount) {
+        return amount >= 0;
+    }
+}
+
+class WalletPayment implements PaymentStrategy {
+    private String walletId;
+    public WalletPayment(String walletId) { this.walletId = walletId; }
+    @Override
+    public boolean pay(double amount) {
+        return amount >= 0;
+    }
+}
+
+class Delivery {
+    private int id;
+    private String address;
+    private String status;
+    private String courier;
+
+    public Delivery(int id, String address, String courier) {
+        this.id = id;
+        this.address = address;
+        this.courier = courier;
+        this.status = "PENDING";
+    }
+
+    public void send() { this.status = "ON_THE_WAY"; }
+    public void complete() { this.status = "DELIVERED"; }
+    public void fail() { this.status = "FAILED"; }
+
+    public int getId() { return id; }
+    public String getAddress() { return address; }
+    public String getStatus() { return status; }
+    public String getCourier() { return courier; }
+}
+
+class PromoCode {
+    private String code;
+    private int percent;
+    public PromoCode(String code, int percent) { this.code = code; this.percent = percent; }
+    public String getCode() { return code; }
+    public int getPercent() { return percent; }
+    public boolean isValid() { return percent > 0 && percent < 100; }
+}
