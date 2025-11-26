@@ -1,0 +1,186 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Date;
+
+class Пользователь {
+    private int id;
+    private String имя;
+    private String фамилия;
+    private String email;
+    private String логин;
+    private String пароль;
+
+    public Пользователь(int id, String имя, String фамилия, String логин, String пароль) {
+        this.id = id;
+        this.имя = имя;
+        this.фамилия = фамилия;
+        this.логин = логин;
+        this.пароль = пароль;
+    }
+
+    public void войти() {}
+    public void выйти() {}
+    public void изменитьПароль(String новыйПароль) {}
+    public int getId() { return id; }
+    public String getИмя() { return имя; }
+    public String getФамилия() { return фамилия; }
+}
+
+class Администратор extends Пользователь {
+    public Администратор(int id, String имя, String фамилия, String логин, String пароль) {
+        super(id, имя, фамилия, логин, пароль);
+    }
+
+    public void добавитьФакультет(Университет университет, Факультет факультет) {}
+    public void удалитьФакультет(Университет университет, Факультет факультет) {}
+    public void добавитьПользователя(Пользователь пользователь) {}
+    public void управлятьКурсами() {}
+}
+
+class Студент extends Пользователь {
+    private String номерЗачетки;
+    private List<Курс> списокКурсов;
+
+    public Студент(int id, String имя, String фамилия, String логин, String пароль, String номерЗачетки) {
+        super(id, имя, фамилия, логин, пароль);
+        this.номерЗачетки = номерЗачетки;
+        this.списокКурсов = new ArrayList<>();
+    }
+
+    public void зарегистрироватьсяНаКурс(Курс курс) {
+        списокКурсов.add(курс);
+        курс.добавитьСтудента(this);
+    }
+    public void просмотретьОценки() {}
+    public void сдатьЭкзамен(Экзамен экзамен) {}
+    public String getНомерЗачетки() { return номерЗачетки; }
+}
+
+class Преподаватель extends Пользователь {
+    private String должность;
+    private List<Курс> списокКурсов;
+
+    public Преподаватель(int id, String имя, String фамилия, String логин, String пароль, String должность) {
+        super(id, имя, фамилия, логин, пароль);
+        this.должность = должность;
+        this.списокКурсов = new ArrayList<>();
+    }
+
+    public void провестиЗанятие(Курс курс) {}
+    public void выставитьОценку(Студент студент, Экзамен экзамен, int оценка) {}
+    public void управлятьРасписанием(Расписание расписание) {}
+    public void добавитьКурс(Курс курс) { списокКурсов.add(курс); }
+}
+
+class Университет {
+    private String название;
+    private String адрес;
+    private List<Факультет> списокФакультетов;
+
+    public Университет(String название, String адрес) {
+        this.название = название;
+        this.адрес = адрес;
+        this.списокФакультетов = new ArrayList<>();
+    }
+
+    public void добавитьФакультет(Факультет факультет) { списокФакультетов.add(факультет); }
+    public void удалитьФакультет(Факультет факультет) { списокФакультетов.remove(факультет); }
+}
+
+class Факультет {
+    private String название;
+    private List<Кафедра> списокКафедр;
+
+    public Факультет(String название) {
+        this.название = название;
+        this.списокКафедр = new ArrayList<>();
+    }
+
+    public void добавитьКафедру(Кафедра кафедра) { списокКафедр.add(кафедра); }
+    public void удалитьКафедру(Кафедра кафедра) { списокКафедр.remove(кафедра); }
+}
+
+class Кафедра {
+    private String название;
+    private List<Преподаватель> списокПреподавателей;
+    private List<Курс> списокКурсов;
+
+    public Кафедра(String название) {
+        this.название = название;
+        this.списокПреподавателей = new ArrayList<>();
+        this.списокКурсов = new ArrayList<>();
+    }
+
+    public void добавитьПреподавателя(Преподаватель преподаватель) { списокПреподавателей.add(преподаватель); }
+    public void удалитьПреподавателя(Преподаватель преподаватель) { списокПреподавателей.remove(преподаватель); }
+    public void добавитьКурс(Курс курс) { списокКурсов.add(курс); }
+}
+
+class Курс {
+    private String название;
+    private Кафедра кафедра;
+    private List<Студент> списокСтудентов;
+    private Расписание расписание;
+
+    public Курс(String название, Кафедра кафедра) {
+        this.название = название;
+        this.кафедра = кафедра;
+        this.списокСтудентов = new ArrayList<>();
+        кафедра.добавитьКурс(this);
+    }
+
+    public void добавитьСтудента(Студент студент) { списокСтудентов.add(студент); }
+    public void удалитьСтудента(Студент студент) { списокСтудентов.remove(студент); }
+    public void провестиЗанятие() {}
+    public void установитьРасписание(Расписание расписание) { this.расписание = расписание; }
+}
+
+class Расписание {
+    private Date дата;
+    private String время;
+    private String аудитория;
+    private Курс курс;
+
+    public Расписание(Курс курс, Date дата, String время, String аудитория) {
+        this.курс = курс;
+        this.дата = дата;
+        this.время = время;
+        this.аудитория = аудитория;
+        курс.установитьРасписание(this);
+    }
+
+    public void создатьРасписание() {}
+    public void изменитьРасписание(Date новаяДата, String новоеВремя, String новаяАудитория) {}
+}
+
+class Экзамен {
+    private Курс курс;
+    private Date дата;
+    private List<Оценка> списокОценок;
+
+    public Экзамен(Курс курс, Date дата) {
+        this.курс = курс;
+        this.дата = дата;
+        this.списокОценок = new ArrayList<>();
+    }
+
+    public void назначитьЭкзамен() {}
+    public void выставитьОценку(Студент студент, int значение) {
+        Оценка оценка = new Оценка(студент, this, значение);
+        списокОценок.add(оценка);
+    }
+}
+
+class Оценка {
+    private int значение;
+    private Студент студент;
+    private Экзамен экзамен;
+
+    public Оценка(Студент студент, Экзамен экзамен, int значение) {
+        this.студент = студент;
+        this.экзамен = экзамен;
+        this.значение = значение;
+    }
+
+    public void просмотретьДетали() {}
+}
