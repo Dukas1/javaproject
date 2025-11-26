@@ -1,0 +1,106 @@
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+public class LibrarySystem {
+    public static void main(String[] args) {
+        Librarian librarian = new Librarian(1, "Aigerim", "Manager");
+        Reader reader = new Reader(10, "Duman", "duman@example.com");
+        Book book1 = new Book("Clean Code", "Robert Martin", "978-1-2345", true);
+        Book book2 = new Book("Java", "Oracle", "978-9-8765", true);
+        librarian.addBook(book1);
+        librarian.addBook(book2);
+        reader.borrowBook(book1);
+        Loan loan = new Loan(book1, reader, new Date());
+        loan.issueLoan();
+        loan.completeLoan();
+        reader.returnBook(book1);
+        System.out.println("Books available: " + librarian.getBooks().size());
+    }
+}
+
+class Book {
+    private String title;
+    private String author;
+    private String isbn;
+    private boolean isAvailable;
+
+    public Book(String title, String author, String isbn, boolean isAvailable) {
+        this.title = title;
+        this.author = author;
+        this.isbn = isbn;
+        this.isAvailable = isAvailable;
+    }
+
+    public String getTitle() { return title; }
+    public boolean isAvailable() { return isAvailable; }
+
+    public void markAsLoaned() { isAvailable = false; }
+    public void markAsAvailable() { isAvailable = true; }
+}
+
+class Reader {
+    private int id;
+    private String name;
+    private String email;
+    private List<Book> borrowedBooks = new ArrayList<>();
+
+    public Reader(int id, String name, String email) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+    }
+
+    public void borrowBook(Book book) {
+        if (book.isAvailable()) {
+            borrowedBooks.add(book);
+            book.markAsLoaned();
+        }
+    }
+
+    public void returnBook(Book book) {
+        borrowedBooks.remove(book);
+        book.markAsAvailable();
+    }
+}
+
+class Librarian {
+    private int id;
+    private String name;
+    private String position;
+    private List<Book> books = new ArrayList<>();
+
+    public Librarian(int id, String name, String position) {
+        this.id = id;
+        this.name = name;
+        this.position = position;
+    }
+
+    public void addBook(Book book) { books.add(book); }
+    public void removeBook(Book book) { books.remove(book); }
+    public List<Book> getBooks() { return books; }
+}
+
+class Loan {
+    private Book book;
+    private Reader reader;
+    private Date loanDate;
+    private Date returnDate;
+    private String status;
+
+    public Loan(Book book, Reader reader, Date loanDate) {
+        this.book = book;
+        this.reader = reader;
+        this.loanDate = loanDate;
+        this.status = "CREATED";
+    }
+
+    public void issueLoan() {
+        status = "ON_LOAN";
+    }
+
+    public void completeLoan() {
+        status = "RETURNED";
+        returnDate = new Date();
+    }
+}
