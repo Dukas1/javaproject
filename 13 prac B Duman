@@ -1,0 +1,282 @@
+import java.util.*;
+
+public class Module13All {
+    public static void main(String[] args) {
+
+        TaxiOrderSystem taxi = new TaxiOrderSystem();
+        taxi.selectCar("Toyota Camry");
+        taxi.confirmOrder();
+        taxi.arrive();
+        taxi.startTrip();
+        taxi.completeTrip();
+
+        EventBookingSystem events = new EventBookingSystem();
+        events.addEvent(new Event(1,"Concert","12.12","Hall A"));
+        events.addEvent(new Event(2,"Conference","05.01","Hall B"));
+        events.addUser(new User(1,"Duman","user"));
+        events.addUser(new User(2,"Admin","admin"));
+        events.viewEvents();
+        events.createBooking(1,1,1);
+        events.cancelBooking(1);
+
+        OnlineStoreSystem shop = new OnlineStoreSystem();
+        shop.addProduct(new Product(1,"Laptop",400));
+        shop.addProduct(new Product(2,"Mouse",20));
+        Cart c = new Cart();
+        c.add(new Product(1,"Laptop",400));
+        c.add(new Product(2,"Mouse",20));
+        Order o = shop.createOrder(1,c,"Duman");
+        shop.pay(o);
+        shop.complete(o);
+    }
+}
+
+
+
+interface TaxiState {
+    void selectCar(String car);
+    void confirmOrder();
+    void arrive();
+    void startTrip();
+    void completeTrip();
+    void cancel();
+}
+
+class TaxiOrderSystem {
+    TaxiState idle = new Idle(this);
+    TaxiState selected = new CarSelected(this);
+    TaxiState confirmed = new OrderConfirmed(this);
+    TaxiState arrived = new CarArrived(this);
+    TaxiState inTrip = new InTrip(this);
+    TaxiState completed = new TripCompleted(this);
+    TaxiState cancelled = new TripCancelled(this);
+
+    TaxiState current = idle;
+    String car = "";
+
+    void setState(TaxiState s){ current = s; }
+
+    void selectCar(String c){ current.selectCar(c); }
+    void confirmOrder(){ current.confirmOrder(); }
+    void arrive(){ current.arrive(); }
+    void startTrip(){ current.startTrip(); }
+    void completeTrip(){ current.completeTrip(); }
+    void cancel(){ current.cancel(); }
+}
+
+class Idle implements TaxiState {
+    TaxiOrderSystem s;
+    Idle(TaxiOrderSystem s){this.s=s;}
+    public void selectCar(String car){ s.car=car; s.setState(s.selected); }
+    public void confirmOrder(){}
+    public void arrive(){}
+    public void startTrip(){}
+    public void completeTrip(){}
+    public void cancel(){}
+}
+
+class CarSelected implements TaxiState {
+    TaxiOrderSystem s;
+    CarSelected(TaxiOrderSystem s){this.s=s;}
+    public void selectCar(String car){ s.car=car; }
+    public void confirmOrder(){ s.setState(s.confirmed); }
+    public void arrive(){}
+    public void startTrip(){}
+    public void completeTrip(){}
+    public void cancel(){ s.setState(s.cancelled); }
+}
+
+class OrderConfirmed implements TaxiState {
+    TaxiOrderSystem s;
+    OrderConfirmed(TaxiOrderSystem s){this.s=s;}
+    public void selectCar(String car){}
+    public void confirmOrder(){}
+    public void arrive(){ s.setState(s.arrived); }
+    public void startTrip(){}
+    public void completeTrip(){}
+    public void cancel(){ s.setState(s.cancelled); }
+}
+
+class CarArrived implements TaxiState {
+    TaxiOrderSystem s;
+    CarArrived(TaxiOrderSystem s){this.s=s;}
+    public void selectCar(String car){}
+    public void confirmOrder(){}
+    public void arrive(){}
+    public void startTrip(){ s.setState(s.inTrip); }
+    public void completeTrip(){}
+    public void cancel(){ s.setState(s.cancelled); }
+}
+
+class InTrip implements TaxiState {
+    TaxiOrderSystem s;
+    InTrip(TaxiOrderSystem s){this.s=s;}
+    public void selectCar(String car){}
+    public void confirmOrder(){}
+    public void arrive(){}
+    public void startTrip(){}
+    public void completeTrip(){ s.setState(s.completed); }
+    public void cancel(){}
+}
+
+class TripCompleted implements TaxiState {
+    TaxiOrderSystem s;
+    TripCompleted(TaxiOrderSystem s){this.s=s;}
+    public void selectCar(String car){}
+    public void confirmOrder(){}
+    public void arrive(){}
+    public void startTrip(){}
+    public void completeTrip(){}
+    public void cancel(){}
+}
+
+class TripCancelled implements TaxiState {
+    TaxiOrderSystem s;
+    TripCancelled(TaxiOrderSystem s){this.s=s;}
+    public void selectCar(String car){}
+    public void confirmOrder(){}
+    public void arrive(){}
+    public void startTrip(){}
+    public void completeTrip(){}
+    public void cancel(){}
+}
+
+
+
+class Event {
+    int id;
+    String name;
+    String date;
+    String place;
+    Event(int id,String n,String d,String p){
+        this.id=id;name=n;date=d;place=p;
+    }
+}
+
+class User {
+    int id;
+    String name;
+    String role;
+    User(int id,String n,String r){
+        this.id=id;name=n;role=r;
+    }
+}
+
+class Booking {
+    int id;
+    User user;
+    Event event;
+    String status;
+    Booking(int id,User u,Event e,String s){
+        this.id=id;user=u;event=e;status=s;
+    }
+}
+
+class EventBookingSystem {
+    List<Event> events = new ArrayList<>();
+    List<User> users = new ArrayList<>();
+    List<Booking> bookings = new ArrayList<>();
+
+    void addEvent(Event e){ events.add(e); }
+    void removeEvent(int id){ events.removeIf(x->x.id==id); }
+    void editEvent(int id,String n,String d,String p){
+        for(Event e:events){
+            if(e.id==id){
+                e.name=n; e.date=d; e.place=p;
+            }
+        }
+    }
+
+    void addUser(User u){ users.add(u); }
+
+    void viewEvents(){
+        for(Event e:events){}
+    }
+
+    void createBooking(int bid,int uid,int eid){
+        User u = users.stream().filter(x->x.id==uid).findFirst().orElse(null);
+        Event ev = events.stream().filter(x->x.id==eid).findFirst().orElse(null);
+        if(u!=null && ev!=null){
+            bookings.add(new Booking(bid,u,ev,"active"));
+        }
+    }
+
+    void cancelBooking(int bid){
+        for(Booking b:bookings){
+            if(b.id==bid) b.status="cancelled";
+        }
+    }
+
+    void viewAllBookings(){
+        for(Booking b:bookings){}
+    }
+}
+
+
+
+class Product {
+    int id;
+    String name;
+    int price;
+    Product(int id,String n,int p){
+        this.id=id;name=n;price=p;
+    }
+}
+
+class Cart {
+    List<Product> items = new ArrayList<>();
+    void add(Product p){ items.add(p); }
+    int total(){
+        int t=0;
+        for(Product p:items) t+=p.price;
+        return t;
+    }
+}
+
+class Order {
+    int id;
+    Cart cart;
+    String customer;
+    boolean paid=false;
+    String status="created";
+    Order(int id,Cart c,String customer){
+        this.id=id;this.cart=c;this.customer=customer;
+    }
+}
+
+class PaymentSystem {
+    boolean pay(int amount){ return amount>0; }
+}
+
+class OrderProcessor {
+    void process(Order o){ o.status="processed"; }
+    void ship(Order o){ o.status="shipped"; }
+}
+
+class OnlineStoreSystem {
+    List<Product> catalog = new ArrayList<>();
+
+    void addProduct(Product p){ catalog.add(p); }
+
+    Order createOrder(int id,Cart c,String customer){
+        return new Order(id,c,customer);
+    }
+
+    boolean pay(Order o){
+        PaymentSystem ps = new PaymentSystem();
+        if(ps.pay(o.cart.total())){
+            o.paid=true;
+            o.status="paid";
+            return true;
+        }
+        return false;
+    }
+
+    void complete(Order o){
+        if(o.paid){
+            OrderProcessor p = new OrderProcessor();
+            p.process(o);
+            p.ship(o);
+        }
+    }
+}
