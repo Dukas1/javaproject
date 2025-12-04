@@ -1,0 +1,307 @@
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class Module13Homework {
+    public static void main(String[] args) {
+        LibrarySystem library = new LibrarySystem();
+        library.addBranch("Central");
+        library.addBranch("East Side");
+        library.registerUser("alice","Alice","Reader");
+        library.registerUser("bob","Bob","Librarian");
+        library.registerUser("carol","Carol","Admin");
+        library.addBook("Central", new Book("1984","George Orwell","Dystopia"));
+        library.addBook("Central", new Book("Animal Farm","George Orwell","Satire"));
+        library.addBook("East Side", new Book("Clean Code","Robert C. Martin","Programming"));
+        library.searchBooks("George Orwell");
+        library.reserveBook("alice","1984");
+        library.reserveBook("alice","Clean Code");
+        library.viewReservations("alice");
+        library.cancelReservation("alice","Clean Code");
+        library.checkoutBook("bob","1984");
+        library.returnBook("bob","1984");
+        library.addBranch("West End");
+        library.removeBranch("East Side");
+        library.viewAnalytics();
+        System.out.println("----- Ticket Vending Machine Demo -----");
+        TicketMachine machine = new TicketMachine();
+        machine.selectTicket("Single", 50);
+        machine.insertMoney(20);
+        machine.insertMoney(30);
+        machine.dispense();
+        machine.selectTicket("Return", 70);
+        machine.insertMoney(100);
+        machine.cancel();
+        machine.selectTicket("Single", 50);
+        machine.insertMoney(50);
+        machine.dispense();
+    }
+}
+
+class LibrarySystem {
+    private Map<String, Branch> branches = new HashMap<>();
+    private Map<String, UserAccount> users = new HashMap<>();
+    private List<Reservation> reservations = new ArrayList<>();
+    private Map<String, Integer> checkoutCounts = new HashMap<>();
+
+    void addBranch(String name){
+        branches.putIfAbsent(name,new Branch(name));
+    }
+
+    void removeBranch(String name){
+        branches.remove(name);
+    }
+
+    void registerUser(String username, String displayName, String role){
+        users.put(username, new UserAccount(username,displayName,role));
+    }
+
+    void addBook(String branchName, Book book){
+        Branch b = branches.get(branchName);
+        if(b!=null) b.addBook(book);
+    }
+
+    void removeBook(String branchName, String title){
+        Branch b = branches.get(branchName);
+        if(b!=null) b.removeBook(title);
+    }
+
+    List<Book> searchBooks(String query){
+        List<Book> result = new ArrayList<>();
+        for(Branch b: branches.values()){
+            result.addAll(b.search(query));
+        }
+        System.out.println("Search results for '"+query+"':");
+        for(Book bk: result) System.out.println(" - "+bk);
+        return result;
+    }
+
+    boolean reserveBook(String username, String title){
+        UserAccount u = users.get(username);
+        if(u==null) return false;
+        for(Branch b: branches.values()){
+            Book book = b.findAvailable(title);
+            if(book!=null){
+                Reservation r = new Reservation(u,book,new Date(),b.name);
+                reservations.add(r);
+                book.setReserved(true);
+                System.out.println(u.displayName+" reserved "+book.title+" at "+b.name);
+                return true;
+            }
+        }
+        System.out.println("Book '"+title+"' not available for reservation");
+        return false;
+    }
+
+    boolean cancelReservation(String username, String title){
+        Iterator<Reservation> it = reservations.iterator();
+        while(it.hasNext()){
+            Reservation r = it.next();
+            if(r.user.username.equals(username) && r.book.title.equals(title)){
+                r.book.setReserved(false);
+                it.remove();
+                System.out.println("Reservation cancelled: "+title+" by "+username);
+                return true;
+            }
+        }
+        System.out.println("No matching reservation to cancel");
+        return false;
+    }
+
+    void viewReservations(String username){
+        System.out.println("Reservations for "+username+":");
+        for(Reservation r: reservations){
+            if(r.user.username.equals(username)) System.out.println(" - "+r.book.title+" at "+r.branchName+" on "+r.date);
+        }
+    }
+
+    boolean checkoutBook(String librarianUsername, String title){
+        UserAccount u = users.get(librarianUsername);
+        if(u==null || !u.role.equals("Librarian")) {
+            System.out.println("Only librarians can checkout books");
+            return false;
+        }
+        for(Branch b: branches.values()){
+            Book book = b.find(title);
+            if(book!=null && !book.isCheckedOut()){
+                book.setCheckedOut(true);
+                checkoutCounts.put(book.title, checkoutCounts.getOrDefault(book.title,0)+1);
+                System.out.println("Book checked out: "+book.title);
+                return true;
+            }
+        }
+        System.out.println("Book not found or already checked out");
+        return false;
+    }
+
+    boolean returnBook(String librarianUsername, String title){
+        UserAccount u = users.get(librarianUsername);
+        if(u==null || !u.role.equals("Librarian")) {
+            System.out.println("Only librarians can return books");
+            return false;
+        }
+        for(Branch b: branches.values()){
+            Book book = b.find(title);
+            if(book!=null && book.isCheckedOut()){
+                book.setCheckedOut(false);
+                System.out.println("Book returned: "+book.title);
+                return true;
+            }
+        }
+        System.out.println("Book not found or not checked out");
+        return false;
+    }
+
+    void viewAnalytics(){
+        System.out.println("Analytics:");
+        int totalCheckedOut = checkoutCounts.values().stream().mapToInt(Integer::intValue).sum();
+        System.out.println("Total checkouts: "+totalCheckedOut);
+        List<Map.Entry<String,Integer>> top = checkoutCounts.entrySet().stream()
+                .sorted((a,b)->b.getValue()-a.getValue())
+                .limit(5).collect(Collectors.toList());
+        System.out.println("Top books:");
+        for(Map.Entry<String,Integer> e: top) System.out.println(" - "+e.getKey()+": "+e.getValue());
+    }
+}
+
+class Branch {
+    String name;
+    private Map<String,Book> books = new HashMap<>();
+    Branch(String name){this.name=name;}
+    void addBook(Book b){books.put(b.title,b);}
+    void removeBook(String title){books.remove(title);}
+    List<Book> search(String q){
+        String s=q.toLowerCase();
+        return books.values().stream().filter(b->b.title.toLowerCase().contains(s) || b.author.toLowerCase().contains(s) || b.genre.toLowerCase().contains(s)).collect(Collectors.toList());
+    }
+    Book findAvailable(String title){
+        Book b = books.get(title);
+        if(b!=null && !b.isReserved() && !b.isCheckedOut()) return b;
+        return null;
+    }
+    Book find(String title){
+        return books.get(title);
+    }
+}
+
+class Book {
+    String title;
+    String author;
+    String genre;
+    private boolean reserved=false;
+    private boolean checkedOut=false;
+    Book(String title,String author,String genre){this.title=title;this.author=author;this.genre=genre;}
+    void setReserved(boolean v){reserved=v;}
+    boolean isReserved(){return reserved;}
+    void setCheckedOut(boolean v){checkedOut=v;}
+    boolean isCheckedOut(){return checkedOut;}
+    public String toString(){return title+" by "+author+" ["+genre+"]";}
+}
+
+class UserAccount {
+    String username;
+    String displayName;
+    String role;
+    UserAccount(String u,String d,String r){username=u;displayName=d;role=r;}
+}
+
+class Reservation {
+    UserAccount user;
+    Book book;
+    Date date;
+    String branchName;
+    Reservation(UserAccount u,Book b,Date d,String branch){user=u;book=b;date=d;branchName=branch;}
+}
+
+
+
+interface TicketState {
+    void selectTicket(String type,int price);
+    void insertMoney(int amount);
+    void dispense();
+    void cancel();
+    int getInserted();
+    String getTicketType();
+    int getPrice();
+}
+
+class TicketMachine {
+    private TicketState idle;
+    private TicketState waitingForMoney;
+    private TicketState moneyReceived;
+    private TicketState ticketDispensed;
+    private TicketState transactionCanceled;
+    private TicketState current;
+    TicketMachine(){
+        idle = new IdleState(this);
+        waitingForMoney = new WaitingForMoneyState(this);
+        moneyReceived = new MoneyReceivedState(this);
+        ticketDispensed = new TicketDispensedState(this);
+        transactionCanceled = new TransactionCanceledState(this);
+        current = idle;
+    }
+    void setState(TicketState s){current=s;}
+    TicketState getIdle(){return idle;}
+    TicketState getWaiting(){return waitingForMoney;}
+    TicketState getMoneyReceived(){return moneyReceived;}
+    TicketState getDispensed(){return ticketDispensed;}
+    TicketState getCanceled(){return transactionCanceled;}
+    void selectTicket(String type,int price){current.selectTicket(type,price);}
+    void insertMoney(int amount){current.insertMoney(amount);}
+    void dispense(){current.dispense();}
+    void cancel(){current.cancel();}
+}
+
+abstract class AbstractState implements TicketState {
+    protected TicketMachine machine;
+    protected String ticketType="";
+    protected int price=0;
+    protected int inserted=0;
+    AbstractState(TicketMachine m){machine=m;}
+    public void selectTicket(String type,int price){ticketType=type;this.price=price;inserted=0;machine.setState(machine.getWaiting());System.out.println("Ticket selected: "+type+" price "+price);}
+    public void insertMoney(int amount){inserted+=amount; System.out.println("Inserted: "+amount+" (total "+inserted+")"); if(inserted>=price) machine.setState(machine.getMoneyReceived());}
+    public void dispense(){ if(inserted>=price){ System.out.println("Dispensing ticket: "+ticketType); int change=inserted-price; if(change>0) System.out.println("Change returned: "+change); inserted=0; machine.setState(machine.getDispensed()); machine.setState(machine.getIdle()); } else System.out.println("Not enough money");}
+    public void cancel(){ if(inserted>0) System.out.println("Transaction cancelled, returning: "+inserted); else System.out.println("Transaction cancelled"); inserted=0; machine.setState(machine.getCanceled()); machine.setState(machine.getIdle());}
+    public int getInserted(){return inserted;}
+    public String getTicketType(){return ticketType;}
+    public int getPrice(){return price;}
+}
+
+class IdleState extends AbstractState {
+    IdleState(TicketMachine m){super(m);}
+    public void selectTicket(String type,int price){super.selectTicket(type,price);}
+    public void insertMoney(int amount){System.out.println("Select ticket first");}
+    public void dispense(){System.out.println("No ticket selected");}
+    public void cancel(){System.out.println("Nothing to cancel");}
+}
+
+class WaitingForMoneyState extends AbstractState {
+    WaitingForMoneyState(TicketMachine m){super(m);}
+    public void selectTicket(String type,int price){System.out.println("Already in transaction");}
+    public void insertMoney(int amount){super.insertMoney(amount);}
+    public void dispense(){System.out.println("Insert money first");}
+    public void cancel(){super.cancel();}
+}
+
+class MoneyReceivedState extends AbstractState {
+    MoneyReceivedState(TicketMachine m){super(m);}
+    public void selectTicket(String type,int price){System.out.println("Transaction in progress");}
+    public void insertMoney(int amount){super.insertMoney(amount);}
+    public void dispense(){super.dispense();}
+    public void cancel(){super.cancel();}
+}
+
+class TicketDispensedState extends AbstractState {
+    TicketDispensedState(TicketMachine m){super(m);}
+    public void selectTicket(String type,int price){System.out.println("Machine resetting");}
+    public void insertMoney(int amount){System.out.println("Machine resetting");}
+    public void dispense(){System.out.println("Already dispensed");}
+    public void cancel(){System.out.println("Cannot cancel, ticket dispensed");}
+}
+
+class TransactionCanceledState extends AbstractState {
+    TransactionCanceledState(TicketMachine m){super(m);}
+    public void selectTicket(String type,int price){System.out.println("Ready for new transaction");}
+    public void insertMoney(int amount){System.out.println("Ready for new transaction");}
+    public void dispense(){System.out.println("No transaction");}
+    public void cancel(){System.out.println("Already cancelled");}
+}
