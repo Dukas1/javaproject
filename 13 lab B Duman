@@ -1,0 +1,203 @@
+import java.util.*;
+
+public class 13Lab {
+    public static void main(String[] args) {
+        HotelBookingSystem hotel = new HotelBookingSystem();
+        hotel.selectRoom("A12");
+        hotel.confirmBooking();
+        hotel.pay();
+        hotel.finish();
+
+        TicketRequest request = new TicketRequest();
+        request.sendToClient();
+        request.pay();
+        request.confirm();
+
+        OnlineCourseSystem system = new OnlineCourseSystem();
+        system.registerUser("student","Duman");
+        system.login("student");
+        system.viewCourses();
+        system.enroll("Java Course");
+    }
+}
+
+
+
+interface BookingState {
+    void selectRoom(String room);
+    void confirm();
+    void pay();
+    void cancel();
+    void finish();
+}
+
+class HotelBookingSystem {
+    BookingState idle = new IdleState(this);
+    BookingState selected = new RoomSelectedState(this);
+    BookingState confirmed = new BookingConfirmedState(this);
+    BookingState paid = new PaidState(this);
+    BookingState cancelled = new CancelledState(this);
+    BookingState current = idle;
+
+    String room = "";
+
+    void setState(BookingState s){ current = s; }
+    void selectRoom(String r){ current.selectRoom(r); }
+    void confirmBooking(){ current.confirm(); }
+    void pay(){ current.pay(); }
+    void cancel(){ current.cancel(); }
+    void finish(){ current.finish(); }
+}
+
+class IdleState implements BookingState {
+    HotelBookingSystem s;
+    IdleState(HotelBookingSystem s){this.s=s;}
+    public void selectRoom(String room){ s.room=room; s.setState(s.selected); }
+    public void confirm(){}
+    public void pay(){}
+    public void cancel(){}
+    public void finish(){}
+}
+
+class RoomSelectedState implements BookingState {
+    HotelBookingSystem s;
+    RoomSelectedState(HotelBookingSystem s){this.s=s;}
+    public void selectRoom(String room){ s.room=room; }
+    public void confirm(){ s.setState(s.confirmed); }
+    public void pay(){}
+    public void cancel(){ s.setState(s.cancelled); }
+    public void finish(){}
+}
+
+class BookingConfirmedState implements BookingState {
+    HotelBookingSystem s;
+    BookingConfirmedState(HotelBookingSystem s){this.s=s;}
+    public void selectRoom(String room){}
+    public void confirm(){}
+    public void pay(){ s.setState(s.paid); }
+    public void cancel(){ s.setState(s.cancelled); }
+    public void finish(){}
+}
+
+class PaidState implements BookingState {
+    HotelBookingSystem s;
+    PaidState(HotelBookingSystem s){this.s=s;}
+    public void selectRoom(String room){}
+    public void confirm(){}
+    public void pay(){}
+    public void cancel(){}
+    public void finish(){ s.setState(s.idle); }
+}
+
+class CancelledState implements BookingState {
+    HotelBookingSystem s;
+    CancelledState(HotelBookingSystem s){this.s=s;}
+    public void selectRoom(String room){}
+    public void confirm(){}
+    public void pay(){}
+    public void cancel(){}
+    public void finish(){}
+}
+
+
+interface TicketState {
+    void send();
+    void pay();
+    void confirm();
+    void cancel();
+}
+
+class TicketRequest {
+    TicketState created = new CreatedState(this);
+    TicketState waiting = new WaitingPaymentState(this);
+    TicketState paid = new PaidTicketState(this);
+    TicketState confirmed = new ConfirmedTicketState(this);
+    TicketState cancelled = new CancelledTicketState(this);
+    TicketState current = created;
+
+    void setState(TicketState s){ current = s; }
+    void sendToClient(){ current.send(); }
+    void pay(){ current.pay(); }
+    void confirm(){ current.confirm(); }
+    void cancel(){ current.cancel(); }
+}
+
+class CreatedState implements TicketState {
+    TicketRequest r;
+    CreatedState(TicketRequest r){this.r=r;}
+    public void send(){ r.setState(r.waiting); }
+    public void pay(){}
+    public void confirm(){}
+    public void cancel(){ r.setState(r.cancelled); }
+}
+
+class WaitingPaymentState implements TicketState {
+    TicketRequest r;
+    WaitingPaymentState(TicketRequest r){this.r=r;}
+    public void send(){}
+    public void pay(){ r.setState(r.paid); }
+    public void confirm(){}
+    public void cancel(){ r.setState(r.cancelled); }
+}
+
+class PaidTicketState implements TicketState {
+    TicketRequest r;
+    PaidTicketState(TicketRequest r){this.r=r;}
+    public void send(){}
+    public void pay(){}
+    public void confirm(){ r.setState(r.confirmed); }
+    public void cancel(){}
+}
+
+class ConfirmedTicketState implements TicketState {
+    TicketRequest r;
+    ConfirmedTicketState(TicketRequest r){this.r=r;}
+    public void send(){}
+    public void pay(){}
+    public void confirm(){}
+    public void cancel(){}
+}
+
+class CancelledTicketState implements TicketState {
+    TicketRequest r;
+    CancelledTicketState(TicketRequest r){this.r=r;}
+    public void send(){}
+    public void pay(){}
+    public void confirm(){}
+    public void cancel(){}
+}
+
+
+
+class OnlineCourseSystem {
+    Map<String,String> users = new HashMap<>();
+    List<String> courses = Arrays.asList("Java Course","Python Course","C# Course");
+
+    void registerUser(String role,String name){
+        users.put(role,name);
+    }
+
+    void login(String role){
+        users.get(role);
+    }
+
+    void viewCourses(){
+        courses.toArray();
+    }
+
+    void enroll(String course){
+    }
+}
+
+class Student {
+    String name;
+    Student(String n){name=n;}
+}
+
+class Teacher extends Student {
+    Teacher(String n){super(n);}
+}
+
+class Admin extends Student {
+    Admin(String n){super(n);}
+}
