@@ -1,0 +1,128 @@
+interface GeographicalObject extends Cloneable {
+    void setName(String name);
+    void setMaterial(String material);
+    void setDimensions(String dimensions);
+    void setAdditionalFeatures(String features);
+    void displayInfo();
+    GeographicalObject cloneObject();
+}
+
+class Building implements GeographicalObject {
+    private String name;
+    private String material;
+    private String dimensions;
+    private String additionalFeatures;
+
+    public void setName(String name) { this.name = name; }
+    public void setMaterial(String material) { this.material = material; }
+    public void setDimensions(String dimensions) { this.dimensions = dimensions; }
+    public void setAdditionalFeatures(String features) { this.additionalFeatures = features; }
+
+    public void displayInfo() {
+        System.out.println("Building: " + name + ", Material: " + material + ", Dimensions: " + dimensions + ", Features: " + additionalFeatures);
+    }
+
+    public GeographicalObject cloneObject() {
+        try { return (GeographicalObject) super.clone(); }
+        catch (CloneNotSupportedException e) { e.printStackTrace(); return null; }
+    }
+}
+
+class Road implements GeographicalObject {
+    private String name;
+    private String material;
+    private String dimensions;
+    private String additionalFeatures;
+
+    public void setName(String name) { this.name = name; }
+    public void setMaterial(String material) { this.material = material; }
+    public void setDimensions(String dimensions) { this.dimensions = dimensions; }
+    public void setAdditionalFeatures(String features) { this.additionalFeatures = features; }
+
+    public void displayInfo() {
+        System.out.println("Road: " + name + ", Material: " + material + ", Dimensions: " + dimensions + ", Features: " + additionalFeatures);
+    }
+
+    public GeographicalObject cloneObject() {
+        try { return (GeographicalObject) super.clone(); }
+        catch (CloneNotSupportedException e) { e.printStackTrace(); return null; }
+    }
+}
+
+class Park implements GeographicalObject {
+    private String name;
+    private String material;
+    private String dimensions;
+    private String additionalFeatures;
+
+    public void setName(String name) { this.name = name; }
+    public void setMaterial(String material) { this.material = material; }
+    public void setDimensions(String dimensions) { this.dimensions = dimensions; }
+    public void setAdditionalFeatures(String features) { this.additionalFeatures = features; }
+
+    public void displayInfo() {
+        System.out.println("Park: " + name + ", Material: " + material + ", Dimensions: " + dimensions + ", Features: " + additionalFeatures);
+    }
+
+    public GeographicalObject cloneObject() {
+        try { return (GeographicalObject) super.clone(); }
+        catch (CloneNotSupportedException e) { e.printStackTrace(); return null; }
+    }
+}
+
+class Waterbody implements GeographicalObject {
+    private String name;
+    private String material;
+    private String dimensions;
+    private String additionalFeatures;
+
+    public void setName(String name) { this.name = name; }
+    public void setMaterial(String material) { this.material = material; }
+    public void setDimensions(String dimensions) { this.dimensions = dimensions; }
+    public void setAdditionalFeatures(String features) { this.additionalFeatures = features; }
+
+    public void displayInfo() {
+        System.out.println("Waterbody: " + name + ", Material: " + material + ", Dimensions: " + dimensions + ", Features: " + additionalFeatures);
+    }
+
+    public GeographicalObject cloneObject() {
+        try { return (GeographicalObject) super.clone(); }
+        catch (CloneNotSupportedException e) { e.printStackTrace(); return null; }
+    }
+}
+
+class GeographicalObjectFactory {
+    public GeographicalObject createObject(String type) {
+        switch(type.toLowerCase()) {
+            case "building": return new Building();
+            case "road": return new Road();
+            case "park": return new Park();
+            case "waterbody": return new Waterbody();
+            default: return null;
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        GeographicalObjectFactory factory = new GeographicalObjectFactory();
+
+        GeographicalObject building1 = factory.createObject("building");
+        building1.setName("Office Tower");
+        building1.setMaterial("Concrete");
+        building1.setDimensions("50m height, 30x20m base");
+        building1.setAdditionalFeatures("Glass facade");
+        building1.displayInfo();
+
+        GeographicalObject building2 = building1.cloneObject();
+        building2.setName("Residential Tower");
+        building2.displayInfo();
+
+        GeographicalObject park = factory.createObject("park");
+        park.setName("Central Park");
+        park.setMaterial("Grass");
+        park.setDimensions("500x300m");
+        park.setAdditionalFeatures("Playground, Fountain");
+        park.displayInfo();
+    }
+}
